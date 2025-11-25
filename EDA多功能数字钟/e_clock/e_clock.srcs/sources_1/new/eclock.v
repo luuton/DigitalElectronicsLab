@@ -24,6 +24,7 @@ module eclock(
     input CLK,              // 100MHz主时钟输入
     input add_min,          // 分钟调整信号（上升沿有效）
     input add_hour,         // 小时调整信号（上升沿有效）
+    input mod_adjust,
     input rst_n,            // 异步复位信号（低电平有效）
     output [7:0] an,        // 数码管位选信号（低电平有效）
     output [7:0] seg        // 数码管段选信号（低电平有效，共阴极）
@@ -42,40 +43,39 @@ module eclock(
         .CLK_100MHz(CLK),           // 100MHz输入时钟
         .CLK_1Hz_Out(CLK_1Hz)       // 1Hz输出时钟
     );
-    
+
     // 测试led
     assign LED[0] = CLK_1Hz;
     assign LED[1] = sec[0];
     assign LED[2] = sec_carry;
     
-    wire add_sec,carryIn_sec;
-    assign add_sec = 1'b0;
-    assign carryIn_sec = 1'b1;
 
     // 秒计数器实例：60进制计数器a
     sec_counter u_sec (
         .clk(CLK_1Hz),
         .rst_n(rst_n),
         .sec(sec),
-        .sec_carry(sec_carry)
+        .sec_overflow(sec_carry)
     );
 
     // 分计数器实例：60进制计数器，支持手动调整
     min_counter u_min (
         .clk(CLK_1Hz),
         .rst_n(rst_n),
-        .sec_carry(sec_carry),
-        .add_min_pulse(add_min),
+        .mod_adjust(mod_adjust),
+        .sec_overflow(sec_carry),
+        .add_min(add_min),
         .min(min),
-        .min_carry(min_carry)
+        .min_overflow(min_carry)
     );
 
     // 时计数器实例：24进制计数器，支持手动调整
     hour_counter u_hour (
         .clk(CLK_1Hz),
         .rst_n(rst_n),
-        .min_carry(min_carry),
-        .add_hour_pulse(add_hour),
+        .mod_adjust(mod_adjust),
+        .min_overflow(min_carry),
+        .add_hour(add_hour),
         .hour(hour)
     );
 
@@ -198,8 +198,7 @@ module min_counter(
     output min_overflow       // 分溢出，小时计数器使用
 );
 
-    wire add_min_posedge = add_min; // 假设外部已做去抖+上升沿检测
-    wire inc = sec_overflow || (mod_adjust && add_min_posedge);
+    wire inc = (!mod_adjust && sec_overflow) || (mod_adjust && add_min);
 
     wire min_ovf = (min == 6'd59) && inc;
     wire [5:0] min_next = min_ovf ? 6'd0 : (min + inc);
@@ -224,8 +223,7 @@ module hour_counter(
     output reg [4:0] hour
 );
 
-    wire add_hour_posedge = add_hour;
-    wire inc = min_overflow || (mod_adjust && add_hour_posedge);
+    wire inc = (!mod_adjust && min_overflow) || (mod_adjust && add_hour);
 
     wire [4:0] hour_next = (hour == 5'd23) && inc ? 5'd0 : (hour + inc);
 
