@@ -24,10 +24,14 @@ module eclock(
     input CLK,              // 100MHz主时钟输入
     input add_min,          // 分钟调整信号（上升沿有效）
     input add_hour,         // 小时调整信号（上升沿有效）
-    input mod_adjust,
+    input mod_adjust,       // 校时模式信号（高电平有效）
+    input mod_alarm,        // 闹钟设置信号
+    input base_conversion,  // 进制切换
     input rst_n,            // 异步复位信号（低电平有效）
     output [7:0] an,        // 数码管位选信号（低电平有效）
-    output [7:0] seg        // 数码管段选信号（低电平有效，共阴极）
+    output [7:0] seg,       // 数码管段选信号（低电平有效，共阴极）
+    output hourly_LED,      // 整点报时
+    output alarm_LED        // 闹钟
 );
     // 内部信号定义
     wire CLK_1Hz;           // 1Hz时钟信号
@@ -49,7 +53,8 @@ module eclock(
     assign LED[1] = sec[0];
     assign LED[2] = sec_carry;
     
-
+    wire add_hour_clock = mod_alarm?0:add_hour;
+    wire add_min_clock = mod_alarm?0:add_min;
     // 秒计数器实例：60进制计数器a
     sec_counter u_sec (
         .clk(CLK_1Hz),
@@ -64,7 +69,7 @@ module eclock(
         .rst_n(rst_n),
         .mod_adjust(mod_adjust),
         .sec_overflow(sec_carry),
-        .add_min(add_min),
+        .add_min(add_min_clock),
         .min(min),
         .min_overflow(min_carry)
     );
@@ -75,18 +80,51 @@ module eclock(
         .rst_n(rst_n),
         .mod_adjust(mod_adjust),
         .min_overflow(min_carry),
-        .add_hour(add_hour),
-        .hour(hour)
+        .add_hour(add_hour_clock),
+        .hour(hour),
+        .base_conversion(base_conversion)
     );
+
+    wire [5:0] min_set;
+    wire [4:0] hour_set;
+
+    wire [5:0] min_show = mod_alarm?min_set:min;
+    wire [4:0] hour_show = mod_alarm?hour_set:hour;
+    wire [5:0] sec_show = mod_alarm?CLK_1Hz:sec;
+
+    wire add_hour_alarm = mod_alarm?add_hour:0;
+    wire add_min_alarm = mod_alarm?add_min:0;
 
     // 数码管显示驱动实例
     seg8_driver u_seg8 (
         .clk(CLK),                  // 100MHz扫描时钟
         .sec(sec),                  // 秒计数值输入
-        .min(min),                  // 分计数值输入
-        .hour(hour),                // 时计数值输入
+        .min(min_show),                  // 分计数值输入
+        .hour(hour_show),                // 时计数值输入
         .an(an),                    // 位选信号输出
         .seg(seg)                   // 段选信号输出
+    );
+
+    ealarm ealarm(
+        .CLK_1Hz(CLK_1Hz),
+        .rst_n(rst_n),
+        .mod_adjust(mod_adjust),
+        .add_min(add_min_alarm),
+        .min(min),
+        .add_hour(add_hour_alarm),
+        .hour(hour),
+        .alarm(alarm_LED),
+        .min_set(min_set),
+        .hour_set(hour_set),
+        .base_conversion(base_conversion)
+    );
+
+    Hourly_Alarm hourly(
+        .CLK_1Hz(CLK_1Hz),
+        .rst_n(rst_n),
+        .mod_adjust(mod_adjust),
+        .min(min),
+        .alarm(hourly_LED)
     );
 endmodule
 
@@ -218,14 +256,22 @@ module hour_counter(
     input  clk,
     input  rst_n,
     input  mod_adjust,
-    input  add_hour,          // 手动时+1（上升沿触发）
-    input  min_overflow,      // 分溢出自动加1
+    input  base_conversion,
+    input  add_hour,
+    input  min_overflow,
     output reg [4:0] hour
 );
 
     wire inc = (!mod_adjust && min_overflow) || (mod_adjust && add_hour);
-
-    wire [4:0] hour_next = (hour == 5'd23) && inc ? 5'd0 : (hour + inc);
+    
+    // 计算下一个小时值（不考虑进制）
+    wire [4:0] raw_hour_next = hour + inc;
+    
+    // 根据进制计算实际的下一个小时值
+    wire [4:0] hour_next;
+    assign hour_next = (base_conversion) ? 
+                       ((raw_hour_next > 5'd11) ? 5'd0 : raw_hour_next) :  // 12小时制
+                       ((raw_hour_next > 5'd23) ? 5'd0 : raw_hour_next);   // 24小时制
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n)
@@ -235,6 +281,7 @@ module hour_counter(
     end
 
 endmodule
+
 
 module Divider100MHz_1Hz(
     input  CR,
@@ -260,4 +307,114 @@ module Divider100MHz_1Hz(
             end
         end
     end
+endmodule
+
+module alarmLED(
+    input CLK_1Hz,
+    input rst_n,
+    input alarm_en,
+    output reg alarm
+);
+
+    reg [2:0] flash_counter = 0;  // 闪烁控制计数器
+    reg flash_phase;              // 闪烁相位：0=灭，1=亮
+
+    // 闪烁控制逻辑
+    always @(posedge CLK_1Hz or negedge rst_n) begin
+    if (!rst_n) begin
+        flash_counter <= 3'b0;
+        flash_phase <= 1'b0;
+        alarm <= 1'b0;
+    end else begin
+        if (alarm_en) begin
+            // 闹钟触发，开始闪烁
+            if (flash_counter < 3'd6) begin  // 3次闪烁需要6个半周期
+                flash_phase <= ~flash_phase;  // 切换相位
+                
+                if (flash_phase) begin
+                    // 每个完整周期增加计数
+                    flash_counter <= flash_counter + 1;
+                end
+                
+                // LED控制：奇数计数亮，偶数计数灭
+                alarm <= flash_counter[0];
+            end else begin
+                // 闪烁完成，保持灭
+                alarm <= 1'b0;
+            end
+        end else begin
+            // 闹钟未触发，重置
+            flash_counter <= 3'b0;
+            flash_phase <= 1'b0;
+            alarm <= 1'b0;
+        end
+    end
+end
+endmodule
+
+module ealarm(
+    input CLK_1Hz,
+    input rst_n,
+    input mod_adjust,
+    input base_conversion,
+    input add_min,
+    input add_hour,
+    input [5:0] min,
+    input [4:0] hour,
+    output alarm,
+    output [5:0] min_set,
+    output [4:0] hour_set
+);
+
+// 闹钟设置计数器
+min_counter min_alarm(
+    .clk(CLK_1Hz),
+    .rst_n(rst_n),
+    .mod_adjust(mod_adjust),
+    .sec_overflow(1'b0),
+    .add_min(add_min),
+    .min(min_set)
+);
+
+hour_counter hour_alarm(
+    .clk(CLK_1Hz),
+    .rst_n(rst_n),
+    .mod_adjust(mod_adjust),
+    .min_overflow(1'b0),
+    .add_hour(add_hour),
+    .base_conversion(base_conversion),
+    .hour(hour_set)
+);
+
+// 闹钟使能信号
+wire alarm_en = ((min_set == min) && (hour_set == hour));
+
+// 实例化闹钟响应(LED闪烁)
+alarmLED alarm1(
+    .CLK_1Hz(CLK_1Hz),
+    .rst_n(rst_n),
+    .alarm_en(alarm_en),
+    .alarm(alarm)
+);
+
+endmodule
+
+module Hourly_Alarm(
+    input CLK_1Hz,
+    input rst_n,
+    input mod_adjust,
+    input [5:0] min,
+    output alarm
+);
+
+wire alarm_en = (!mod_adjust && (min == 0));
+
+alarmLED alarm1(
+    .CLK_1Hz(CLK_1Hz),
+    .rst_n(rst_n),
+    .alarm_en(alarm_en),
+    .alarm(alarm)
+);
+
+    
 endmodule
