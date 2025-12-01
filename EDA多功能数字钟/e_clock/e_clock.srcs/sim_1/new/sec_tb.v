@@ -202,6 +202,7 @@ module tb_hour_counter;
     reg mod_adjust;
     reg min_overflow;
     reg add_hour;
+    reg base_conversion;
     wire [4:0] hour;
     
     hour_counter uut (
@@ -209,6 +210,7 @@ module tb_hour_counter;
         .rst_n(rst_n),
         .mod_adjust(mod_adjust),
         .min_overflow(min_overflow),
+        .base_conversion(base_conversion),
         .add_hour(add_hour),
         .hour(hour)
     );
@@ -224,6 +226,7 @@ module tb_hour_counter;
         mod_adjust = 0;
         min_overflow = 0;
         add_hour = 0;
+        base_conversion = 0;
         
         #2 rst_n = 0;
         #4 rst_n = 1;
@@ -444,6 +447,70 @@ module tb_ealarm;
                 $time, hour, min, hour_set, min_set, alarm);
         
         $display("\n? 闹钟模块测试完成!");
+        $finish;
+    end
+
+endmodule
+
+
+`timescale 1ns / 1ps
+
+module tb_seg8_quick;
+
+    reg clk;
+    reg [5:0] sec;
+    reg [5:0] min;
+    reg [4:0] hour;
+    wire [7:0] an;
+    wire [7:0] seg;
+    
+    seg8_driver uut(
+        .clk(clk),
+        .sec(sec),
+        .min(min),
+        .hour(hour),
+        .an(an),
+        .seg(seg)
+    );
+    
+    // 快速时钟：1MHz
+    always #0.5 clk = ~clk;
+    
+    initial begin
+        $display("=== 快速数码管验证 ===");
+        
+        clk = 0;
+        sec = 6'd32;
+        min = 6'd28;
+        hour = 5'd13;
+        
+        $display("测试时间: %02d:%02d:%02d", hour, min, sec);
+        
+        // 观察扫描
+        $display("观察数码管扫描...");
+        repeat(20) begin
+            @(posedge clk);
+            #0.1;
+            if (an != 8'b11111111) begin
+                $display("  位选: %b, 段选: %b", an, seg);
+            end
+        end
+        
+        // 改变时间
+        $display("\n改变时间到 20:30:30");
+        sec = 6'd30;
+        min = 6'd30;
+        hour = 5'd20;
+        
+        repeat(20) begin
+            @(posedge clk);
+            #0.1;
+            if (an != 8'b11111111) begin
+                $display("  位选: %b, 段选: %b", an, seg);
+            end
+        end
+        
+        $display("\n? 快速验证完成!");
         $finish;
     end
 
