@@ -146,8 +146,8 @@ module seg8_driver (
     // 动态扫描控制：生成约1kHz的扫描频率
     always @(posedge clk) begin
         scan_cnt <= scan_cnt + 1;
-        if (scan_cnt == 20'd100_000) begin  // 100MHz/100000 = 1kHz
-//        if (scan_cnt == 20'd10) begin
+//        if (scan_cnt == 20'd100_000) begin  // 100MHz/100000 = 1kHz
+        if (scan_cnt == 20'd10) begin               //仿真用
             scan_cnt <= 0;
             digit_sel <= (digit_sel == 3'd7) ? 0 : digit_sel + 1; // 循环扫描0-7位
         end
@@ -289,8 +289,8 @@ module Divider100MHz_1Hz(
     output reg CLK_1Hz_Out
 );
     reg [26:0] count_div;  // 27位计数器
-    parameter DIVIDER = 50_000_000;  // 100MHz到1Hz
-//    parameter DIVIDER = 5;
+//    parameter DIVIDER = 50_000_000;  // 100MHz到1Hz
+    parameter DIVIDER = 5;
     
     always @(posedge CLK_100MHz or negedge CR) begin
         if (!CR) begin

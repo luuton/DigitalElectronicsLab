@@ -3,8 +3,5 @@
 Oct 19 2021
 03:16:22
 E:/XilinxProject/e_clock/e_clock.sim/sim_1/behav/xsim/glbl.v,1634335545,verilog,,,,glbl,,,,,,,,
-E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/cnt60_tb.v,1763465164,verilog,,E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/divider_tb.v,,tb_cnt60_fixed,,,,,,,,
-E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/divider_tb.v,1763425196,verilog,,E:/XilinxProject/e_clock/e_clock.srcs/sources_1/new/eclock.v,,divider_tb,,,,,,,,
-E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/elock_tb.v,1763429843,verilog,,E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/seg8_tb.v,,tb_eclock_fast,,,,,,,,
-,,,,,,,,,,,,,,
-E:/XilinxProject/e_clock/e_clock.srcs/sources_1/new/eclock.v,1763465624,verilog,,E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/cnt60_tb.v,,Divider100MHz_1Hz;cnt60;eclock;hour24;seg8_driver,,,,,,,,
+E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/tb_eclock.v,1764566279,verilog,,,,tb_eclock,,,,,,,,
+E:/XilinxProject/e_clock/e_clock.srcs/sources_1/new/eclock.v,1764566357,verilog,,E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/tb_eclock.v,,Divider100MHz_1Hz;Hourly_Alarm;alarmLED;ealarm;eclock;hour_counter;min_counter;sec_counter;seg8_driver,,,,,,,,
