@@ -26,8 +26,8 @@
 - 约束文件: [Nexys-4-DDR-Master.xdc](https://github.com/Digilent/digilent-xdc/blob/master/Nexys-4-DDR-Master.xdc)
 - 目前仅实现了基本功能，进阶要求后续会实现
   - [x] 自定义闹钟
-  - [ ] 12/24进制切换
-  - [ ] 整点报时(LED闪烁)
+  - [x] 12/24进制切换
+  - [x] 整点报时(LED闪烁)
 - 这里简单描述一下约束的开关功能和现象：
     1. SW0: 校时模式开关，高电平有效(后文描述为SW0[1])
     2. SW1: 分校时开关，SW1[1]有效
