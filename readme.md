@@ -1,5 +1,11 @@
 # 数电实验
 
+## 如何重建工程
+
+- 进入目录，执行`create_project.bat`
+- 确保你的`vivado/bin`已加入系统变量
+- 或在`Vivado Tcl Console`执行`source create_prj.tcl`
+
 ## 1、逻辑门触发器
 
 - OC门就是照着电路图搭实物电路。

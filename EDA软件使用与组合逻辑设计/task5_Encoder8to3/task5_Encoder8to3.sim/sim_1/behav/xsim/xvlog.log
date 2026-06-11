@@ -1,6 +1,0 @@
-INFO: [VRFC 10-2263] Analyzing Verilog file "E:/XilinxProject/task5_Encoder8to3/task5_Encoder8to3.srcs/sources_1/new/Encoder8to3.v" into library xil_defaultlib
-INFO: [VRFC 10-311] analyzing module Encoder8to3_1
-INFO: [VRFC 10-311] analyzing module Encoder8to3_2
-INFO: [VRFC 10-311] analyzing module Encoder8to3_3
-INFO: [VRFC 10-2263] Analyzing Verilog file "E:/XilinxProject/task5_Encoder8to3/task5_Encoder8to3.srcs/sim_1/new/encoder_tb.v" into library xil_defaultlib
-INFO: [VRFC 10-311] analyzing module encoder_tb

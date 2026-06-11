@@ -1,7 +1,0 @@
-Running: xsim.dir/tb_cnt60_detailed_behav/xsimk.exe -simmode gui -wdb tb_cnt60_detailed_behav.wdb -simrunnum 0 -socket 32004
-Design successfully loaded
-Design Loading Memory Usage: 9376 KB (Peak: 9376 KB)
-Design Loading CPU Usage: 15 ms
-Simulation completed
-Simulation Memory Usage: 9968 KB (Peak: 9968 KB)
-Simulation CPU Usage: 15 ms

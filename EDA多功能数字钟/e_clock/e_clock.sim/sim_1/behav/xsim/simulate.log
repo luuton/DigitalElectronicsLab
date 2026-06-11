@@ -1,9 +1,0 @@
-Time resolution is 1 ps
-=== 测试：正常计时 ===
-=== 测试：校时模式 调分钟 ===
-=== 测试：校时模式 调小时 ===
-=== 退出校时模式 ===
-=== 测试：闹钟设置 ===
-=== 测试：12/24 小时制切换 ===
-=== 测试结束 ===
-$stop called at time : 1694500 ps : File "E:/XilinxProject/e_clock/e_clock.srcs/sim_1/new/tb_eclock.v" Line 133
